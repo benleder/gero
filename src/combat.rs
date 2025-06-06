@@ -146,6 +146,67 @@ impl CombatEncounter {
             camera_state: CameraState { x_offset: 0.0, y_offset: 0.0, zoom_level: 1.0 },
         }
     }
+
+    /// Helper to find a mutable reference to a unit by id
+    fn unit_by_id_mut(&mut self, id: &str) -> Option<&mut Unit> {
+        if let Some(idx) = self.player_units.iter().position(|u| u.id == id) {
+            return Some(&mut self.player_units[idx]);
+        }
+        if let Some(idx) = self.enemy_units.iter().position(|u| u.id == id) {
+            return Some(&mut self.enemy_units[idx]);
+        }
+        None
+    }
+
+    /// Advance the turn queue and apply start-of-turn environmental effects to the active unit
+    pub fn start_turn(&mut self) {
+        if let Some(id) = self.turn_order.next_turn() {
+            let effects = self.environmental_effects.clone();
+            if let Some(unit) = self.unit_by_id_mut(&id) {
+                unit.apply_equipment();
+                for effect in &effects {
+                    match effect {
+                        EnvironmentalEffect::FirePatch { grid_cells, damage_per_turn } => {
+                            if grid_cells.contains(&unit.grid_position) {
+                                unit.health_points -= *damage_per_turn;
+                            }
+                        }
+                        EnvironmentalEffect::AcidPool { grid_cells, movement_penalty } => {
+                            if grid_cells.contains(&unit.grid_position) {
+                                let adjusted = (unit.current_stats.agility as f32 * movement_penalty) as i32;
+                                unit.current_stats.agility = adjusted;
+                            }
+                        }
+                        EnvironmentalEffect::SmokeCloud { .. } => {}
+                    }
+                }
+            }
+        }
+    }
+
+    /// Apply end-of-turn environmental logic such as expiring smoke clouds and resetting stats
+    pub fn end_turn(&mut self) {
+        if let Some(id) = self.turn_order.current_unit_id.clone() {
+            if let Some(unit) = self.unit_by_id_mut(&id) {
+                unit.apply_equipment();
+            }
+        }
+
+        // decrement timers and remove expired effects
+        let mut i = 0;
+        while i < self.environmental_effects.len() {
+            if let EnvironmentalEffect::SmokeCloud { turns_remaining, .. } = &mut self.environmental_effects[i] {
+                if *turns_remaining > 0 {
+                    *turns_remaining -= 1;
+                }
+                if *turns_remaining == 0 {
+                    self.environmental_effects.remove(i);
+                    continue;
+                }
+            }
+            i += 1;
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
