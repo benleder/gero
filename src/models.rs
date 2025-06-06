@@ -303,10 +303,54 @@ pub struct RecruitmentChallenge {
     pub is_completed: bool,
 }
 
+impl RecruitmentChallenge {
+    /// Return a reference to the question at `index` if it exists.
+    pub fn present_question(&self, index: usize) -> Option<&LoreQuestion> {
+        self.questions.get(index)
+    }
+
+    /// Record the player's answer for a given question. Returns true if the
+    /// answer was correct and updates the player's score accordingly. When the
+    /// score meets or exceeds `required_correct_answers`, the challenge is
+    /// marked as completed.
+    pub fn record_answer(&mut self, question_index: usize, answer_index: usize) -> bool {
+        if let Some(q) = self.questions.get(question_index) {
+            let correct = q.correct_answer_index == answer_index;
+            if correct {
+                self.player_score += 1;
+                if self.player_score >= self.required_correct_answers {
+                    self.is_completed = true;
+                }
+            }
+            correct
+        } else {
+            false
+        }
+    }
+
+    /// Spawn the recruited unit if the challenge has been completed.
+    /// Returns `None` until the player has achieved the required score.
+    pub fn spawn_unit(&self) -> Option<Unit> {
+        if self.player_score >= self.required_correct_answers && self.is_completed {
+            Some(generate_unit_from_template(&self.unit_name))
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoreQuestion {
     pub question: String,
     pub options: Vec<String>,
     pub correct_answer_index: usize,
     pub explanation: String,
+}
+
+/// Very small helper used by `RecruitmentChallenge::spawn_unit`.
+/// In a full game this would look up a unit template by name and fill out
+/// stats and equipment. Here we simply create a basic Guardsman with the given
+/// identifier and name.
+pub fn generate_unit_from_template(unit_name: &str) -> Unit {
+    Unit::new(unit_name, unit_name, UnitType::Guardsman, Faction::Imperial)
 }
