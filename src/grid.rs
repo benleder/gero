@@ -1,6 +1,7 @@
 use crate::models::{Position, Unit};
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TerrainType {
     Normal,
     Difficult,
@@ -8,7 +9,7 @@ pub enum TerrainType {
     Blocked,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GridMap {
     pub width: usize,
     pub height: usize,
@@ -86,7 +87,7 @@ pub fn try_move(unit: &mut Unit, dest: Position, map: &GridMap) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{Faction, UnitType, Stats};
+    use crate::models::{Faction, UnitType};
 
     fn basic_unit() -> Unit {
         Unit::new("u1", "test", UnitType::Guardsman, Faction::Imperial)

@@ -1,4 +1,4 @@
-use crate::models::{AnimationType, Unit, Weapon, WeaponTier};
+use crate::models::{AnimationType, Unit, Weapon};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone)]
@@ -69,7 +69,7 @@ impl CombatEncounter {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TurnQueue {
     pub initiative: VecDeque<String>,
     pub current_unit_id: Option<String>,
@@ -103,7 +103,7 @@ pub enum CombatPhase {
     End,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EnvironmentalEffect {
     SmokeCloud { center: Position, radius: u32, turns_remaining: u32 },
     FirePatch { grid_cells: Vec<Position>, damage_per_turn: i32 },
@@ -120,7 +120,7 @@ pub struct CameraState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{UnitType, Faction};
+    use crate::models::{UnitType, Faction, WeaponTier};
 
     fn basic_units() -> (Unit, Unit, Weapon) {
         let mut attacker = Unit::new("a", "A", UnitType::Guardsman, Faction::Imperial);
