@@ -51,3 +51,17 @@ fn touch_event_triggers_action() {
     };
     assert_eq!(handler.process_event(&event), Some(GameAction::Activate));
 }
+
+#[test]
+fn unhandled_key_is_ignored() {
+    let mut handler = InputHandler::new();
+    let event = Event::<()>::DeviceEvent {
+        device_id: unsafe { DeviceId::dummy() },
+        event: DeviceEvent::Key(RawKeyEvent {
+            physical_key: PhysicalKey::Code(KeyCode::KeyA),
+            state: ElementState::Released,
+        }),
+    };
+    assert_eq!(handler.process_event(&event), None);
+    assert!(handler.action_log.is_empty());
+}
