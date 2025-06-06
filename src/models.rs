@@ -244,6 +244,54 @@ impl Unit {
             is_selected: false,
         }
     }
+
+    /// Recalculate current_stats based on base_stats and all equipped items.
+    pub fn apply_equipment(&mut self) {
+        self.current_stats = self.base_stats.clone();
+        if let Some(armor) = &self.equipment.armor {
+            self.current_stats.toughness += armor.toughness_bonus;
+            self.current_stats.agility += armor.agility_penalty;
+        }
+        // Weapons currently do not modify stats but are included for completeness.
+        if let Some(_weapon) = &self.equipment.weapon {
+            // Placeholder for future weapon stat modifiers
+        }
+    }
+
+    /// Remove all equipment modifiers, returning stats to base values.
+    pub fn remove_equipment(&mut self) {
+        self.current_stats = self.base_stats.clone();
+    }
+
+    /// Equip a new weapon and update stats accordingly.
+    pub fn equip_weapon(&mut self, weapon: Weapon) {
+        self.remove_equipment();
+        self.equipment.weapon = Some(weapon);
+        self.apply_equipment();
+    }
+
+    /// Unequip the current weapon and update stats.
+    pub fn unequip_weapon(&mut self) -> Option<Weapon> {
+        let old = self.equipment.weapon.take();
+        self.remove_equipment();
+        self.apply_equipment();
+        old
+    }
+
+    /// Equip new armor and update stats to include its bonuses.
+    pub fn equip_armor(&mut self, armor: Armor) {
+        self.remove_equipment();
+        self.equipment.armor = Some(armor);
+        self.apply_equipment();
+    }
+
+    /// Remove the current armor and revert its bonuses.
+    pub fn unequip_armor(&mut self) -> Option<Armor> {
+        let old = self.equipment.armor.take();
+        self.remove_equipment();
+        self.apply_equipment();
+        old
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
