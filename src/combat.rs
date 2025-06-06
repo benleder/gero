@@ -77,6 +77,7 @@ pub fn use_ability(
     user: &mut Unit,
     ability_index: usize,
     targets: &mut [&mut Unit],
+    mut audio: Option<&mut crate::audio::AudioSystem>,
 ) -> Result<(), &'static str> {
     let ability = user
         .abilities
@@ -101,6 +102,12 @@ pub fn use_ability(
     } else {
         if let Some(first) = targets.get_mut(0) {
             apply_ability_effect(&ability.effect, *first);
+        }
+    }
+
+    if let Some(sys) = audio {
+        if !ability.sound_effect_key.is_empty() {
+            sys.play(&ability.sound_effect_key);
         }
     }
 
@@ -227,7 +234,7 @@ impl CombatEncounter {
             .map(|(i, a)| (i, a.effect.damage.unwrap_or(0)))
             .max_by_key(|&(_, dmg)| dmg)
         {
-            let _ = use_ability(enemy, idx, &mut [target]);
+            let _ = use_ability(enemy, idx, &mut [target], None);
             return;
         }
 

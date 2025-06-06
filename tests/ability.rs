@@ -29,7 +29,7 @@ fn single_target_ability() {
         sound_effect_key: String::new(),
     });
 
-    let res = use_ability(&mut user, 0, &mut [&mut target]);
+    let res = use_ability(&mut user, 0, &mut [&mut target], None);
     assert!(res.is_ok());
     assert_eq!(user.action_points, 1);
     assert_eq!(user.abilities[0].current_cooldown, 2);
@@ -68,7 +68,7 @@ fn aoe_hits_multiple_targets() {
         sound_effect_key: String::new(),
     });
 
-    let res = use_ability(&mut user, 0, &mut [&mut t1, &mut t2]);
+    let res = use_ability(&mut user, 0, &mut [&mut t1, &mut t2], None);
     assert!(res.is_ok());
     assert_eq!(t1.health_points, t1.current_stats.max_health - 2);
     assert_eq!(t2.health_points, t2.current_stats.max_health - 2);
