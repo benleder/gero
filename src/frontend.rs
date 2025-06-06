@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use wgpu::SurfaceConfiguration;
 
 use crate::state::GameState;
-use crate::models::Position;
+use crate::models::{Position, AnimationState, AnimationType};
 
 /// A very small renderer skeleton following the GDD specifications.
 /// In a real implementation this would handle sprite atlases and draw calls
@@ -18,6 +18,17 @@ pub struct Renderer<'a> {
     config: Option<SurfaceConfiguration>,
     /// mapping from sprite_id -> atlas rectangle
     pub sprites: HashMap<String, (u32, u32, u32, u32)>,
+    /// loaded sprite textures (each sprite may have multiple frames)
+    pub sprite_textures: HashMap<String, Vec<Vec<u8>>>,
+    /// record of draw calls issued during the last render
+    pub draw_log: Vec<DrawCall>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DrawCall {
+    pub sprite_id: String,
+    pub position: (u32, u32),
+    pub frame_index: usize,
 }
 
 impl<'a> Renderer<'a> {
@@ -59,23 +70,55 @@ impl<'a> Renderer<'a> {
             queue: Some(queue),
             config: Some(config),
             sprites: HashMap::new(),
+            sprite_textures: HashMap::new(),
+            draw_log: Vec::new(),
         }
     }
 
     /// Headless constructor used in tests or non-graphical environments.
     pub fn new_headless(width: u32, height: u32) -> Self {
-        Self { width, height, surface: None, device: None, queue: None, config: None, sprites: HashMap::new() }
+        Self {
+            width,
+            height,
+            surface: None,
+            device: None,
+            queue: None,
+            config: None,
+            sprites: HashMap::new(),
+            sprite_textures: HashMap::new(),
+            draw_log: Vec::new(),
+        }
+    }
+
+    /// Load a sprite with one or more animation frames from raw byte data.
+    /// The renderer stores the bytes so tests can verify loading without a GPU.
+    pub fn load_sprite_from_bytes(&mut self, id: &str, frames: Vec<Vec<u8>>) {
+        self.sprite_textures.insert(id.to_string(), frames);
     }
 
     /// Render the game state. In this skeleton this only iterates over the units
     /// to demonstrate integration with the backend data structures.
     pub fn render_state(&mut self, state: &GameState) {
+        self.draw_log.clear();
         for unit in &state.units {
             let Position { x, y } = unit.grid_position;
-            // In a full implementation we would issue draw calls based on
-            // unit.sprite_id and position here. For now we simply store the
-            // last seen position in the sprite map for verification.
-            self.sprites.insert(unit.id.clone(), (x as u32, y as u32, 0, 0));
+            if let Some(frames) = self.sprite_textures.get(&unit.sprite_id) {
+                let frame = if !frames.is_empty() {
+                    unit.animation_state.frame_index % frames.len()
+                } else {
+                    0
+                } as usize;
+                self.draw_log.push(DrawCall {
+                    sprite_id: unit.sprite_id.clone(),
+                    position: (x as u32, y as u32),
+                    frame_index: frame,
+                });
+                self.sprites
+                    .insert(unit.id.clone(), (x as u32, y as u32, frame as u32, frames.len() as u32));
+            } else {
+                // no sprite loaded; record position only
+                self.sprites.insert(unit.id.clone(), (x as u32, y as u32, 0, 0));
+            }
         }
     }
 }
@@ -101,5 +144,19 @@ mod tests {
         let state = GameState::new(vec![unit]);
         renderer.render_state(&state);
         assert_eq!(renderer.sprites.get("u1"), Some(&(2, 3, 0, 0)));
+    }
+
+    #[test]
+    fn render_records_draw_calls() {
+        let mut renderer = Renderer::new_headless(100, 100);
+        renderer.load_sprite_from_bytes("s", vec![vec![1, 2, 3]]);
+        let mut unit = Unit::new("u", "U", UnitType::Guardsman, Faction::Imperial);
+        unit.sprite_id = "s".into();
+        unit.grid_position = Position { x: 1, y: 1 };
+        renderer.render_state(&GameState::new(vec![unit]));
+        assert_eq!(renderer.draw_log.len(), 1);
+        assert_eq!(renderer.draw_log[0].sprite_id, "s");
+        assert_eq!(renderer.draw_log[0].position, (1, 1));
+        assert_eq!(renderer.draw_log[0].frame_index, 0);
     }
 }
