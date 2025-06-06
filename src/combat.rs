@@ -116,6 +116,39 @@ pub fn tick_cooldowns(unit: &mut Unit) {
     }
 }
 
+fn manhattan(a: &Position, b: &Position) -> u32 {
+    ((a.x as i32 - b.x as i32).abs() + (a.y as i32 - b.y as i32).abs()) as u32
+}
+
+fn ai_move_towards(unit: &mut Unit, dest: &Position, map: &crate::grid::GridMap) {
+    use crate::grid::TerrainType;
+    let mp = unit.current_stats.agility as u32 / 2;
+    let mut pos = unit.grid_position.clone();
+    for _ in 0..mp {
+        if pos == *dest {
+            break;
+        }
+        let mut next = pos.clone();
+        if pos.x < dest.x {
+            next.x += 1;
+        } else if pos.x > dest.x {
+            next.x -= 1;
+        } else if pos.y < dest.y {
+            next.y += 1;
+        } else if pos.y > dest.y {
+            next.y -= 1;
+        }
+        if !map.in_bounds(&next) {
+            break;
+        }
+        if matches!(map.terrain_at(&next), TerrainType::Blocked) {
+            break;
+        }
+        pos = next;
+    }
+    unit.grid_position = pos;
+}
+
 use std::collections::VecDeque;
 use crate::models::Position;
 
@@ -156,6 +189,65 @@ impl CombatEncounter {
             return Some(&mut self.enemy_units[idx]);
         }
         None
+    }
+
+    /// Execute a very small AI routine for the current enemy unit.
+    /// The unit will attempt to move toward the nearest player and use the
+    /// highest-damage ability or weapon that is in range.
+    pub fn enemy_ai_action(&mut self, roll: u8) {
+        let id = match &self.turn_order.current_unit_id {
+            Some(i) => i.clone(),
+            None => return,
+        };
+        let enemy_idx = match self.enemy_units.iter().position(|u| u.id == id) {
+            Some(i) => i,
+            None => return,
+        };
+
+        let enemy_pos = self.enemy_units[enemy_idx].grid_position.clone();
+        let (target_idx, _) = self
+            .player_units
+            .iter()
+            .enumerate()
+            .map(|(i, u)| (i, manhattan(&enemy_pos, &u.grid_position)))
+            .min_by_key(|(_, d)| *d)
+            .unwrap();
+
+        // Split borrows so we can mutably access both units
+        let enemy = &mut self.enemy_units[enemy_idx];
+        let target = &mut self.player_units[target_idx];
+
+        // Try abilities first
+        if let Some((idx, _)) = enemy
+            .abilities
+            .iter()
+            .enumerate()
+            .filter(|(_, a)| a.current_cooldown == 0 && a.action_point_cost <= enemy.action_points)
+            .filter(|(_, a)| manhattan(&enemy.grid_position, &target.grid_position) <= a.range)
+            .map(|(i, a)| (i, a.effect.damage.unwrap_or(0)))
+            .max_by_key(|&(_, dmg)| dmg)
+        {
+            let _ = use_ability(enemy, idx, &mut [target]);
+            return;
+        }
+
+        // Fallback to weapon
+        if let Some(weapon) = enemy.equipment.weapon.clone() {
+            if manhattan(&enemy.grid_position, &target.grid_position) <= weapon.range {
+                let _ = resolve_attack(enemy, &weapon, target, roll, 0);
+                return;
+            }
+        }
+
+        // Move toward target if nothing was in range
+        ai_move_towards(enemy, &target.grid_position, &self.battlefield);
+    }
+
+    /// Convenience wrapper running start_turn -> enemy_ai_action -> end_turn.
+    pub fn run_enemy_turn(&mut self, roll: u8) {
+        self.start_turn();
+        self.enemy_ai_action(roll);
+        self.end_turn();
     }
 
     /// Advance the turn queue and apply start-of-turn environmental effects to the active unit
