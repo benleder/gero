@@ -48,7 +48,7 @@ pub enum Faction {
     Chaos,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Position {
     pub x: usize,
     pub y: usize,
