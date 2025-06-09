@@ -1,5 +1,8 @@
 use crate::frontend::{Renderer, DrawCall};
 use crate::input::GameAction;
+use crate::localization::Localizer;
+
+pub mod options;
 
 #[derive(Debug, Clone)]
 pub struct Panel {
@@ -26,6 +29,15 @@ pub struct FloatingText {
 pub enum UiTab {
     Abilities,
     Inventory,
+}
+
+impl UiTab {
+    pub fn label(&self, loc: &Localizer) -> String {
+        match self {
+            UiTab::Abilities => loc.get("ui.tab.abilities"),
+            UiTab::Inventory => loc.get("ui.tab.inventory"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -127,11 +139,11 @@ impl UiManager {
         self.floating_texts.push(FloatingText { value, position, is_heal: value > 0 });
     }
 
-    pub fn render(&mut self, renderer: &mut Renderer) {
-        renderer.draw_log.push(DrawCall { sprite_id: "panel:top_bar".into(), position: (self.top_bar.x, self.top_bar.y), frame_index: 0 });
-        renderer.draw_log.push(DrawCall { sprite_id: "panel:battlefield".into(), position: (self.battlefield.x, self.battlefield.y), frame_index: 0 });
-        renderer.draw_log.push(DrawCall { sprite_id: "panel:info_panel".into(), position: (self.info_panel.x, self.info_panel.y), frame_index: 0 });
-        renderer.draw_log.push(DrawCall { sprite_id: "panel:bottom_bar".into(), position: (self.bottom_bar.x, self.bottom_bar.y), frame_index: 0 });
+    pub fn render(&mut self, renderer: &mut Renderer, loc: &Localizer) {
+        renderer.draw_log.push(DrawCall { sprite_id: loc.get("panel.top_bar"), position: (self.top_bar.x, self.top_bar.y), frame_index: 0 });
+        renderer.draw_log.push(DrawCall { sprite_id: loc.get("panel.battlefield"), position: (self.battlefield.x, self.battlefield.y), frame_index: 0 });
+        renderer.draw_log.push(DrawCall { sprite_id: loc.get("panel.info_panel"), position: (self.info_panel.x, self.info_panel.y), frame_index: 0 });
+        renderer.draw_log.push(DrawCall { sprite_id: loc.get("panel.bottom_bar"), position: (self.bottom_bar.x, self.bottom_bar.y), frame_index: 0 });
 
         for btn in &self.ability_buttons {
             renderer.draw_log.push(DrawCall { sprite_id: format!("button:ability:{}", btn.id), position: (btn.bounds.x, btn.bounds.y), frame_index: 0 });
@@ -141,8 +153,9 @@ impl UiManager {
         }
 
         for ft in &self.floating_texts {
-            let kind = if ft.is_heal { "heal" } else { "damage" };
-            renderer.draw_log.push(DrawCall { sprite_id: format!("float:{}:{}", kind, ft.value.abs()), position: ft.position, frame_index: 0 });
+            let kind_key = if ft.is_heal { "float.heal" } else { "float.damage" };
+            let prefix = loc.get(kind_key);
+            renderer.draw_log.push(DrawCall { sprite_id: format!("{}:{}", prefix, ft.value.abs()), position: ft.position, frame_index: 0 });
         }
     }
 }

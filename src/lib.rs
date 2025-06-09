@@ -6,3 +6,4 @@ pub mod frontend;
 pub mod input;
 pub mod audio;
 pub mod ui;
+pub mod localization;
