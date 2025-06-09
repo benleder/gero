@@ -47,4 +47,15 @@ impl InputHandler {
         if let Some(ref a) = action { self.action_log.push(a.clone()); }
         action
     }
+
+    /// Process an event and play a menu navigation sound when an action occurs.
+    pub fn process_event_with_audio<T>(&mut self, event: &Event<T>, mut audio: Option<&mut crate::audio::AudioSystem>) -> Option<GameAction> {
+        let action = self.process_event(event);
+        if action.is_some() {
+            if let Some(sys) = audio.as_deref_mut() {
+                sys.play("button_click");
+            }
+        }
+        action
+    }
 }

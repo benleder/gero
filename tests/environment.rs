@@ -5,7 +5,7 @@ use gero::grid::GridMap;
 #[test]
 fn smoke_cloud_expires() {
     let unit = Unit::new("u1", "Unit", UnitType::Guardsman, Faction::Imperial);
-    let mut encounter = CombatEncounter::new(vec![unit], vec![], GridMap::new(3, 3));
+    let mut encounter = CombatEncounter::new(vec![unit], vec![], GridMap::new(3, 3), None);
     encounter.environmental_effects.push(EnvironmentalEffect::SmokeCloud {
         center: Position { x: 1, y: 1 },
         radius: 1,
@@ -31,7 +31,7 @@ fn fire_patch_deals_damage() {
     let mut unit = Unit::new("u", "U", UnitType::Guardsman, Faction::Imperial);
     unit.grid_position = Position { x: 0, y: 0 };
     let starting_hp = unit.health_points;
-    let mut encounter = CombatEncounter::new(vec![unit], vec![], GridMap::new(2, 2));
+    let mut encounter = CombatEncounter::new(vec![unit], vec![], GridMap::new(2, 2), None);
     encounter.environmental_effects.push(EnvironmentalEffect::FirePatch {
         grid_cells: vec![Position { x: 0, y: 0 }],
         damage_per_turn: 2,
@@ -48,7 +48,7 @@ fn acid_pool_reduces_agility_temporarily() {
     unit.base_stats.agility = 4;
     unit.apply_equipment();
     unit.grid_position = Position { x: 0, y: 0 };
-    let mut encounter = CombatEncounter::new(vec![unit], vec![], GridMap::new(2, 2));
+    let mut encounter = CombatEncounter::new(vec![unit], vec![], GridMap::new(2, 2), None);
     encounter.environmental_effects.push(EnvironmentalEffect::AcidPool {
         grid_cells: vec![Position { x: 0, y: 0 }],
         movement_penalty: 0.5,

@@ -171,10 +171,13 @@ pub struct CombatEncounter {
 }
 
 impl CombatEncounter {
-    pub fn new(player_units: Vec<Unit>, enemy_units: Vec<Unit>, battlefield: crate::grid::GridMap) -> Self {
+    pub fn new(player_units: Vec<Unit>, enemy_units: Vec<Unit>, battlefield: crate::grid::GridMap, mut audio: Option<&mut crate::audio::AudioSystem>) -> Self {
         let mut turn_order = TurnQueue::new();
         for u in player_units.iter().chain(enemy_units.iter()) {
             turn_order.add_unit(u.id.clone());
+        }
+        if let Some(sys) = audio.as_deref_mut() {
+            sys.play_background_music("combat");
         }
         Self {
             player_units,

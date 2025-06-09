@@ -26,7 +26,7 @@ fn ai_moves_toward_target_when_out_of_range() {
     let mut player = Unit::new("p", "P", UnitType::Guardsman, Faction::Imperial);
     player.grid_position = Position { x: 3, y: 0 };
 
-    let mut encounter = CombatEncounter::new(vec![player], vec![enemy], GridMap::new(5,5));
+    let mut encounter = CombatEncounter::new(vec![player], vec![enemy], GridMap::new(5,5), None);
     encounter.turn_order.initiative.clear();
     encounter.turn_order.add_unit("e".into());
     encounter.turn_order.add_unit("p".into());
@@ -60,7 +60,7 @@ fn ai_uses_best_available_ability() {
     let mut player = Unit::new("p", "P", UnitType::Guardsman, Faction::Imperial);
     player.grid_position = Position { x: 0, y: 2 };
 
-    let mut encounter = CombatEncounter::new(vec![player], vec![enemy], GridMap::new(5,5));
+    let mut encounter = CombatEncounter::new(vec![player], vec![enemy], GridMap::new(5,5), None);
     encounter.turn_order.initiative.clear();
     encounter.turn_order.add_unit("e".into());
     encounter.turn_order.add_unit("p".into());
@@ -96,7 +96,7 @@ fn ai_falls_back_to_weapon_when_ability_unavailable() {
     let mut player = Unit::new("p", "P", UnitType::Guardsman, Faction::Imperial);
     player.grid_position = Position { x: 1, y: 0 };
 
-    let mut encounter = CombatEncounter::new(vec![player], vec![enemy], GridMap::new(3,3));
+    let mut encounter = CombatEncounter::new(vec![player], vec![enemy], GridMap::new(3,3), None);
     encounter.turn_order.initiative.clear();
     encounter.turn_order.add_unit("e".into());
     encounter.turn_order.add_unit("p".into());
