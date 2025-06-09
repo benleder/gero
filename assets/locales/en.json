@@ -1,0 +1,10 @@
+{
+    "ui.tab.abilities": "Abilities",
+    "ui.tab.inventory": "Inventory",
+    "panel.top_bar": "panel:top_bar",
+    "panel.battlefield": "panel:battlefield",
+    "panel.info_panel": "panel:info_panel",
+    "panel.bottom_bar": "panel:bottom_bar",
+    "float.heal": "float:heal",
+    "float.damage": "float:damage"
+}

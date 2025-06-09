@@ -1,4 +1,5 @@
 use gero::ui::{UiManager, UiTab, UiEvent};
+use gero::localization::Localizer;
 use gero::frontend::Renderer;
 use gero::input::{InputHandler, GameAction};
 use winit::event::{Event, DeviceEvent, WindowEvent, ElementState, MouseButton};
@@ -37,7 +38,8 @@ fn floating_text_draws_using_renderer() {
     let mut ui = UiManager::new(50, 50, vec![], vec![]);
     ui.spawn_floating_text(-5, (10, 10));
     let mut renderer = Renderer::new_headless(50, 50);
-    ui.render(&mut renderer);
+    let loc = Localizer::new("en").unwrap();
+    ui.render(&mut renderer, &loc);
     assert!(renderer
         .draw_log
         .iter()
