@@ -1,4 +1,5 @@
 use gero::input::{InputHandler, GameAction};
+use gero::audio::AudioSystem;
 use winit::event::{Event, WindowEvent, DeviceEvent, ElementState, MouseButton, TouchPhase, Touch};
 use winit::event::DeviceId;
 use winit::keyboard::KeyCode;
@@ -64,4 +65,19 @@ fn unhandled_key_is_ignored() {
     };
     assert_eq!(handler.process_event(&event), None);
     assert!(handler.action_log.is_empty());
+}
+
+#[test]
+fn menu_actions_trigger_audio() {
+    let mut handler = InputHandler::new();
+    let mut audio = AudioSystem::new();
+    let event = Event::<()>::DeviceEvent {
+        device_id: unsafe { DeviceId::dummy() },
+        event: DeviceEvent::Key(RawKeyEvent {
+            physical_key: PhysicalKey::Code(KeyCode::Enter),
+            state: ElementState::Pressed,
+        }),
+    };
+    assert_eq!(handler.process_event_with_audio(&event, Some(&mut audio)), Some(GameAction::Activate));
+    assert_eq!(audio.played_log, vec!["button_click"]);
 }
