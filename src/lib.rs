@@ -5,3 +5,4 @@ pub mod state;
 pub mod frontend;
 pub mod input;
 pub mod audio;
+pub mod ui;
